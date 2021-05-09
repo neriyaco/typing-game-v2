@@ -1,0 +1,212 @@
+.no-style {
+    background: transparent;
+    box-shadow: 0px 0px 0px transparent;
+    border: 0px solid transparent;
+    text-shadow: 0px 0px 0px transparent;
+}
+
+.no-style:hover {
+    background: transparent;
+    box-shadow: 0px 0px 0px transparent;
+    border: 0px solid transparent;
+    text-shadow: 0px 0px 0px transparent;
+}
+
+.no-style:active {
+    outline: none;
+    border: none;
+}
+
+.no-style:focus {
+    outline: 0;
+}
+
+.no-display {
+    display: none;
+}
+
+.main {
+    color: rgb(233, 233, 233);
+}
+
+.console {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    bottom: 0;
+    width: 98%;
+    height: 20%;
+    color: rgb(0, 218, 65);
+    background-color: rgb(71, 71, 71);
+}
+
+.console-error {
+    color: rgb(199, 0, 0);
+}
+
+.console_log {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.console-buttons {
+    text-align: center;
+}
+
+.console-buttons button {
+    display: inline-block;
+    background-color: rgb(46, 46, 46);
+}
+
+.console-buttons button:hover {
+    background-color: rgb(61, 61, 61);
+}
+
+.console-clear-button:hover {
+    color: rgb(163, 32, 9);
+}
+
+.console-copy-button:hover {
+    color: rgb(72, 170, 52);
+}
+
+.console-toggle-view-button:hover {
+    color: rgb(189, 189, 189);
+}
+
+.nickname-picker {
+    margin: 0 auto;
+    width: 50%;
+    padding: 50px;
+    background-color: lawngreen;
+    text-align: center;
+    color: rgb(36, 36, 36);
+}
+
+.nickname-picker * {
+    margin: 2px;
+}
+
+.padded-text-box {
+    padding: 10px;
+}
+
+.submit {
+    font-size: 16pt;
+    padding: 10px 60px;
+    background-color: rgb(5, 60, 161);
+    border-radius: 3px;
+    transition-duration: 0.3s;
+}
+
+.submit:hover {
+    background-color: rgb(12, 85, 219);
+}
+
+.waiting-lobby {
+    background-color: rgb(80, 80, 80);
+    margin: 0 auto;
+    width: 80%;
+    padding: 0px 20px 20px 20px;
+    text-align: center;
+}
+
+.cancel-button {
+    background-color: rgb(252, 59, 0);
+}
+
+.cancel-button:hover {
+    background-color: rgb(255, 66, 41);
+}
+
+.game-screen {
+    background-color: rgb(80, 80, 80);
+    margin: 0 auto;
+    width: 80%;
+    padding: 0px 20px 20px 20px;
+    text-align: center;
+}
+
+.mystery-word-block {
+    font-size: 24pt;
+}
+
+.mystery-word {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.game-end {
+    background-color: rgb(80, 80, 80);
+    margin: 0 auto;
+    width: 80%;
+    padding: 0px 20px 20px 20px;
+    text-align: center;
+}
+
+.winner-block {
+    font-size: 24pt;
+}
+
+.rematch-button {
+    font-size: 16pt;
+    padding: 10px 60px;
+    border-radius: 3px;
+    transition-duration: 0.3s;
+}
+
+.rematch-button-yes {
+    background-color: rgb(29, 252, 0);
+}
+
+.rematch-button-yes:hover {
+    background-color: rgb(67, 255, 42);
+}
+
+.rematch-button-no {
+    background-color: rgb(190, 40, 13);
+}
+
+.rematch-button-no:hover {
+    background-color: rgb(190, 55, 31);
+}
+
+.game-font {
+    font-family: gamefont;
+}
+
+.game-font * {
+    font-family: gameFont;
+}
+
+.fa * {
+    font-family: FontAwesome;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Old versions of Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
+button:hover {
+    cursor: pointer;
+}
+
+@font-face {
+    font-family: roundy;
+    src: url(fonts/BAUHS93.TTF);
+}
+
+@font-face {
+    font-family: gamefont;
+    src: url(fonts/NerkoOne-Regular.ttf);
+}

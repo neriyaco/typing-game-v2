@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="styles/style.css" type="text/css" />
+    <script type="text/javascript">
+        var api;
+        function validate_ip(ip_address) {
+            var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (ip_address.match(ipformat)) {
+                return true;
+            }
+            return false;
+        }
+
+        function validate_port(event) {
+            if (event.type == "keypress") {
+                try {
+                    if (event.charCode != 8 && event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57)) {
+                        value = event.target.value * 10 + parseInt(String.fromCharCode(event.charCode));
+                        if (0 < value && value < 65536) {
+                            return true;
+                        }
+                    }
+                } catch (error) {
+                    event.preventDefault();
+                    return false;
+                }
+                event.preventDefault();
+                return false;
+            }
+            else if (parseInt(event)) {
+                return (0 < event && event < 65536);
+            }
+            return false;
+        }
+        
+        function validate_name(name) {
+            return /^[0-9a-zA-Z_.-]+$/.test(name);
+        }
+    </script>
+</head>
+
+<body style="background-color: rgb(36, 36, 36);">
+    <div class="main">
+        <div class="noselect game-font">
+            The word is MATH
+            <br>
+            IP: <input type="text" id="ip_input" value="127.0.0.1" />
+            Port: <input type="text" onkeypress="validate_port(event);" id="port_input" style="width: 60px" value="3741" />
+            <button id="submit_connect" onclick="submit_connect();">Connect</button>
+        </div>
+        <hr>
+        <div id="nickname_picker" class="nickname-picker no-display game-font game-scene">
+            Enter your name
+            <br>
+            <input type="text" id="nickname" class="padded-text-box" />
+            <br>
+            <button class="submit no-style" id="submit_nickname" onclick="submit_nickname()">OK</button>
+        </div>
+        <div id="waiting_lobby" class="waiting-lobby no-display game-font game-scene">
+            Waiting for new game
+            <br>
+            <button class="cancel-button no-style" onclick="disconnect();">Cancel</button>
+        </div>
+        <div id="game_screen" class="game-screen no-display game-font game-scene">
+            <p class="mystery-word-block"><span class="" id="mystery_word_text">The Word is: </span><span
+                    class="mystery-word" id="mystery_word"></span></p>
+            <input type="text" id="word_input" class="padded-text-box" />
+            <p id="rounds_block" class="rounds-block">Round <span id="round"></span> of <span id="num_rounds"></span>
+            </p>
+            <div id="rounds_history" class="rounds-history"></div>
+        </div>
+        <div id="game_end" class="game-end no-display game-font game-scene">
+            <p class="winner-block">The Winner is <span id="winner_name"></span></p>
+            <p style="font-size: 18pt;">Rematch?</p>
+            <button class="no-style rematch-button rematch-button-yes" onclick="rematch();">Yes</button>
+            <button class="no-style rematch-button rematch-button-no" onclick="disconnect();">No</button>
+        </div>
+    </div>
+    <div class="console noselect" id="console">
+        <div class="console-buttons fa" id="console_buttons">
+            <button onclick="clear_log()" class="console-clear-button fa-trash-o no-style" id="clear_console_button"
+                title="Clear"></button>
+            <button onclick="copy_log()" class="console-copy-button fa-copy no-style" id="copy_console_button"
+                title="Copy"></button>
+            <button onclick="toggle_view()" class="console-toggle-view-button fa-compress no-style"
+                id="toggle_view_button" title="Minimize"></button>
+        </div>
+        <div id="console_log" class="console_log"></div>
+    </div>
+    <script type="text/javascript">
+        var log_console = document.getElementById("console_log");
+        var client_connected = false;
+        var console_maximized = true;
+        var mystery_word = null;
+        var round = 0;
+
+        const ERROR = -1;
+        const OK_STATUS = 0;
+        const NICKNAME = 1;
+        const GAME_STARTED = 2;
+        const WORD = 3;
+        const ROUND_END = 4;
+        const MATCH_END = 5;
+
+        var request = {
+            "code": null,
+            "data": null
+        };
+
+        window.addEventListener("pywebviewready", async function () {
+            api = pywebview.api;
+            log("Ready");
+        });
+
+        function log(to_log) {
+            log_console.innerHTML += to_log + "<br>";
+            log_console.scrollTop = log_console.scrollHeight;
+        }
+
+        function log_error(error) {
+            var parts = error.split(":");
+            if (parts.length > 1) {
+                exception_name = parts[0];
+                exception_msg = parts[1];
+                log(`<span class="console-error">[${exception_name}] ${exception_msg}</span>`);
+            } else {
+                log(`<span class="console-error">${error}</span>`);
+            }
+        }
+
+        function clear_log() {
+            log_console.innerHTML = "";
+        }
+
+        function copy_log() {
+            api.copy_to_clipboard(log_console.innerText);
+        }
+
+        function toggle_view() {
+            var toggle_button = document.getElementById("toggle_view_button");
+            var console_block = document.getElementById("console");
+            var buttons = document.getElementById("console_buttons");
+            if (console_maximized) {
+                console_block.style.maxHeight = buttons.clientHeight + "px";
+                toggle_button.setAttribute("class", "consoleToggleViewButton fa-expand no-style");
+                toggle_button.title = "Maximize";
+            } else {
+                console_block.removeAttribute("style");
+                toggle_button.setAttribute("class", "consoleToggleViewButton fa-compress no-style");
+                toggle_button.title = "Minimize";
+            }
+            console_maximized ^= true;
+        }
+
+        function submit_connect() {
+            if (client_connected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        }
+
+        async function connect() {
+            ip_address = document.getElementById("ip_input").value;
+            port = document.getElementById("port_input").value;
+            if (validate_ip(ip_address) && validate_port(port) && !client_connected) {
+                var success = await api.connect(ip_address, port);
+                if (success) {
+                    client_connected = true;
+                    disable_login();
+                    log("Connected to " + ip_address);
+                } else {
+                    log_error(`ConnectionError:Could not connect to ${ip_address}:${port}. Please try again`);
+                }
+            } else {
+                log_error("ArgumentsError:Fix address or port");
+            }
+        }
+
+        async function disconnect() {
+            var success = await api.disconnect();
+            if (success) {
+                client_connected = false;
+                enable_login();
+                log("Disconnected");
+                location.reload();
+            } else {
+                log_error("ConnectionError:Error while disconnecting");
+            }
+        }
+
+        function send() {
+            request_string = JSON.stringify(request);
+            api.send(request_string);
+        }
+
+        function enable_login() {
+            document.getElementById("ip_input").disabled = false;
+            document.getElementById("port_input").disabled = false;
+            document.getElementById("submit_connect").innerText = "Connect";
+        }
+
+        function disable_login() {
+            document.getElementById("ip_input").disabled = true;
+            document.getElementById("port_input").disabled = true;
+            document.getElementById("submit_connect").innerText = "Disconnect";
+        }
+
+        function show_scene(id) {
+            var scenes = document.getElementsByClassName("game-scene");
+            Array.prototype.forEach.call(scenes, function(scene) {
+                scene.style.display = "none";
+            });
+            show(id);
+        }
+
+        function show(id) {
+            document.getElementById(id).style.display = "block";
+        }
+
+        function hide(id) {
+            document.getElementById(id).style.display = "none";
+        }
+
+        function submit_nickname() {
+            var nick = document.getElementById("nickname").value;
+            if (validate_name(nick)) {
+                request.code = NICKNAME;
+                request.data = nick;
+                send();
+                hide("nickname_picker");
+                show("waiting_lobby");
+            } else {
+                log_error("Invalid nickname!");
+            }
+        }
+
+        function game_start(num_words) {
+            mystery_word = null;
+            round = 0;
+            document.getElementById("mystery_word_text").innerHTML = "Waiting for word";
+            document.getElementById("mystery_word").innerHTML = "";
+            document.getElementById("rounds_history").innerHTML = "";
+            hide("waiting_lobby");
+            show("game_screen");
+            document.getElementById("num_rounds").innerText = num_words;
+            waiting_for_word();
+        }
+
+        function waiting_for_word() {
+            mystery_word = null;
+            document.getElementById("mystery_word_text").innerHTML = "Waiting for new word";
+            document.getElementById("mystery_word").innerHTML = "";
+        }
+
+        function new_word(word) {
+            round++;
+            mystery_word = word;
+            document.getElementById("word_input").value = "";
+            document.getElementById("mystery_word_text").innerHTML = "The Word is: ";
+            document.getElementById("mystery_word").innerHTML = word;
+            document.getElementById("round").innerText = round;
+        }
+
+        function submit_word() {
+            var input = document.getElementById("word_input");
+            input_word = input.value;
+            if (input_word === mystery_word) {
+                request.code = WORD;
+                request.data = input_word;
+                send();
+                input.value = "";
+            } else {
+                log_error("Wrong word");
+            }
+        }
+
+        function round_end(name) {
+            document.getElementById("rounds_history").innerHTML += `Round ${round}. ${mystery_word} => ${name}<br>`;
+        }
+
+        function match_end(name) {
+            show_scene("game_end");
+            document.getElementById("winner_name").innerHTML = `${name}!`;
+            mystery_word = "";
+        }
+
+        function rematch() {
+            show_scene("waiting_lobby");
+        }
+
+        function copy_to_clipboard(text) {
+            navigator.clipboard.writeText(text);
+            log("copied");
+        }
+
+        function handle_response(response) {
+            try {
+                response = JSON.parse(response);
+                if (response.code >= OK_STATUS) {
+                    switch (response.code) {
+                        case OK_STATUS:
+                            break;
+                        case NICKNAME:
+                            show("nickname_picker");
+                            break;
+                        case GAME_STARTED:
+                            game_start(response.data)
+                            break;
+                        case WORD:
+                            new_word(response.data);
+                            break;
+                        case ROUND_END:
+                            round_end(response.data);
+                            break;
+                        case MATCH_END:
+                            match_end(response.data);
+                            break;
+                        default:
+                            log_error("ServerError:The server sent invalid response");
+                    }
+                } else {
+                    log_error(response.data);
+                }
+            } catch (e) {
+                log_error(e);
+            }
+        }
+
+        function add_enter_function(id, func, key = 13) {
+            document.getElementById(id)
+                .addEventListener("keydown", function (event) {
+                    if (event.keyCode === key) {
+                        func();
+                    }
+                });
+        }
+
+        add_enter_function("ip_input", connect);
+        add_enter_function("port_input", connect);
+        add_enter_function("nickname", submit_nickname);
+        add_enter_function("word_input", submit_word);
+
+    </script>
+</body>
+
+</html>
